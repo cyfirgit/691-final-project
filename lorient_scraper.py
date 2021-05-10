@@ -13,14 +13,15 @@ from requests.adapters import HTTPAdapter
 from tqdm import tqdm  # the One True Import of import
 from urllib3.util.retry import Retry
 
-
-logfile = 'lorient-scraper-' + datetime.now().strftime('%Y-%m-%d-%H:%M:%S') + '.log'
+'''
+lorientlog = 'lorient-scraper-' + datetime.now().strftime('%Y-%m-%d-%H:%M:%S') + '.log'
 
 logging.basicConfig(
-    filename=logfile, 
+    filename=lorientlog, 
     format='%(asctime)s %(levelname)-8s %(message)s',
     level=logging.INFO,
     datefmt='%Y-%m-%d %H:%M:%S')
+'''
 
 # Unless their site structure changes this is the lowest value for an article id.
 LORIENT_MIN_ARTICLE = 218146

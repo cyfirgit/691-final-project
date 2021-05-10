@@ -29,10 +29,10 @@ class ValidationError(Exception):
             return f'ValidationError'
 
 
-logfile = 'the961-scraper-' + datetime.now().strftime('%Y-%m-%d-%H:%M:%S') + '.log'
+the961log = 'the961-scraper-' + datetime.now().strftime('%Y-%m-%d-%H-%M-%S') + '.log'
 
 logging.basicConfig(
-    filename=logfile, 
+    filename=the961log, 
     format='%(asctime)s %(levelname)-8s %(message)s',
     level=logging.INFO,
     datefmt='%Y-%m-%d %H:%M:%S')
@@ -164,13 +164,14 @@ def thread_worker(url):
         
 
     soup_tic = time.perf_counter()
-    soup = BeautifulSoup(page.text, 'html.parser')
+    soup = BeautifulSoup(page.text, features='lxml')
     soup_toc = time.perf_counter()
 
     parse_tic = time.perf_counter()
     try:
         article = parse_article(soup, url)
-    except ValidationError:
+    except ValidationError as e:
+        logging.error(e)
         #Hacky way to gracefully skip an errored article
         article = {'text': ''}
     parse_toc = time.perf_counter()
@@ -222,6 +223,7 @@ def crawl_all_the961():
         if sitemap == current_map:
             urls = set(crawl_sitemap_the961(sitemap))
             articles.update(urls - parsed_articles)
+            new_parsed.update(urls)
         elif not sitemap in completed_maps:
             index = int(re.search(r'(\d)\.xml', sitemap).groups()[0])
             urls = set(crawl_sitemap_the961(sitemap))

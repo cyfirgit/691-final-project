@@ -24,13 +24,15 @@ from urllib3.util.retry import Retry
 import lorient_scraper as lorient
 import the961_scraper as the961
 
-logfile = 'main-' + datetime.now().strftime('%Y-%m-%d-%H:%M:%S') + '.log'
+'''
+mainlog = 'main-' + datetime.now().strftime('%Y-%m-%d-%H-%M-%S') + '.log'
 
 logging.basicConfig(
-    filename=logfile, 
+    filename=mainlog, 
     format='%(asctime)s %(levelname)-8s %(message)s',
     level=logging.INFO,
     datefmt='%Y-%m-%d %H:%M:%S')
+'''
 
 '''
 MAIN
