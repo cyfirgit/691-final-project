@@ -1,0 +1,7 @@
+geckodriver.log
+*.json
+*.pickle
+*.xml
+*.log
+*.ipynb
+/__pycache__*
