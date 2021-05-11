@@ -1,6 +1,7 @@
 import concurrent.futures as cf
 import json
 import logging
+import os
 import re
 import sys
 import time
@@ -13,7 +14,6 @@ from requests.adapters import HTTPAdapter
 from tqdm import tqdm  # the One True Import of import
 from urllib3.util.retry import Retry
 
-'''
 lorientlog = 'lorient-scraper-' + datetime.now().strftime('%Y-%m-%d-%H:%M:%S') + '.log'
 
 logging.basicConfig(
@@ -21,7 +21,7 @@ logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
     level=logging.INFO,
     datefmt='%Y-%m-%d %H:%M:%S')
-'''
+
 
 # Unless their site structure changes this is the lowest value for an article id.
 LORIENT_MIN_ARTICLE = 218146
@@ -350,3 +350,79 @@ def scrape_latest():
         json.dump(toc, f, ensure_ascii=False, indent=4)
 
 
+def scrape_backwards(cutoff):
+    with open('toc.json', 'r') as f:
+        toc = json.load(f)
+    min_id = int(toc['min_id'])
+    min_datetime = datetime.strptime(toc['min_datetime'], '%Y-%m-%dT%H:%M%z')
+    delta = min_datetime - cutoff
+
+    #Find the first article_id that is within the cutoff period.
+    print(f'Seeking backwards to {datetime.strftime(cutoff, "%Y-%m-%d")}')
+    first_id = find_backwards(min_id, min_datetime, cutoff)
+    print(f'Found! {first_id}')
+
+    #Parse out the articles
+    articles, times = parse_many(range(first_id, min_id))
+
+    performance_timing = [
+    '\nPerformance timing:',
+    f"\nget_html()\t\tMin: {min(times['html']):.6f}\tMax: {max(times['html']):.6f}\tAvg: {sum(times['html'])/len(times['html']):.6f}",
+    f"get_soup()\t\tMin: {min(times['soup']):.6f}\tMax: {max(times['soup']):.6f}\tAvg: {sum(times['soup'])/len(times['soup']):.6f}",
+    f"parse_article()\t\tMin: {min(times['parse']):.6f}\tMax: {max(times['parse']):.6f}\tAvg: {sum(times['parse'])/len(times['parse']):.6f}",
+    ]
+    for line in performance_timing:
+        print(line)
+        logging.info(line)
+
+    filename = 'lorient-' + str(first_id) + '-' + str(min_id) + '.json'
+    articles_to_json(articles, filename)
+
+    toc['min_id'] = str(first_id)
+    toc['min_datetime'] = datetime.strftime(cutoff, '%Y-%m-%dT%H:%M%z')
+
+    print(f'Found {len(articles)} new articles over {delta.days + 1} days.')
+
+    with open('toc.json', 'w', encoding='utf-8') as f:
+        json.dump(toc, f, ensure_ascii=False, indent=4)
+
+
+'''
+Lookup min_date from toc.json for user interface.
+'''
+def min_date_lookup():
+    with open('toc.json', 'r') as f:
+        toc = json.load(f)
+    min_datetime = datetime.strptime(toc['min_datetime'], '%Y-%m-%dT%H:%M%z')
+    return min_datetime
+
+
+'''
+Combine parsed out article jsons and filter duplicates.
+'''
+def combine_lorient_json():
+    lorient_filename = re.compile(r'lorient\-\d+\-\d+\.json')
+    directory = os.listdir()
+    lorient_files = [x for x in directory if re.match(lorient_filename, x) != None]
+    all_titles = set()
+    all_articles = []
+    print(f'Reading in jsons...')
+    for l_file in lorient_files:
+        with open(l_file, 'r') as f:
+            l_arts = json.load(f)
+        titleset = set([x['title'] for x in l_arts])
+        titleset = titleset - all_titles
+        for article in l_arts:
+            if article['title'] in titleset:
+                all_articles.append(article)
+        all_titles.update(titleset)
+    print(f'Read complete!')
+        
+    print(f'Sorting articles...')
+    articles_list = list(all_articles)
+    results = sorted(articles_list, key=lambda k: datetime.strptime(k['datetime'], '%Y-%m-%dT%H:%M%z'))
+    print(f'Sort complete!')
+
+    articles_to_json(results, 'lorient_all.json', convert_datetimes=False)
+    
+    return

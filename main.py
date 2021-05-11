@@ -43,7 +43,7 @@ def main():
         print('Welcome to the <INSERT WITTY NAME FOR FINAL PROJECT HERE>\n')
         site = int(input("Choose a site to handle (1 - L'Orient-Le Jour, 2 - the961.com):"))
         if site == 1:
-            operation = int(input("Choose an operation (1 - Scrape Latest):"))
+            operation = int(input("Choose an operation (1 - Scrape Latest, 2 - Scrape backwards, 3 - Batch articles):"))
         elif site == 2:
             operation = int(input("Choose an operation (1 - Scrape Latest):"))
         else:
@@ -57,6 +57,17 @@ def main():
 
         if opset == 11:
             lorient.scrape_latest()
+        elif opset == 12:
+            min_datetime = lorient.min_date_lookup()
+            print(f'Earliest parsed article is from {min_datetime}.')
+            try:
+                cutoff_str = input("Enter new cutoff date, format YYYY-MM-DD:")
+                cutoff = datetime.strptime(cutoff_str + "+0200", "%Y-%m-%d%z")
+            except:
+                raise Exception(f'Invalid input for "cutoff date": {cutoff_str}')
+            lorient.scrape_backwards(cutoff)
+        elif opset == 13:
+            lorient.combine_lorient_json()
         elif opset == 21:
             the961.scrape_latest()
         else:
