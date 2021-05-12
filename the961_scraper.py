@@ -28,7 +28,7 @@ class ValidationError(Exception):
         else:
             return f'ValidationError'
 
-'''
+
 the961log = 'the961-scraper-' + datetime.now().strftime('%Y-%m-%d-%H-%M-%S') + '.log'
 
 logging.basicConfig(
@@ -36,7 +36,7 @@ logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
     level=logging.INFO,
     datefmt='%Y-%m-%d %H:%M:%S')
-'''
+
 
 """
 Session builder timeout-tolerant requests.
@@ -90,7 +90,8 @@ def articles_to_json(parsed_articles:list, filename:str, convert_datetimes=True)
     if convert_datetimes:
         print('Converting datetimes to string...')
         for article in parsed_articles:
-            article['datetime'] = datetime.strftime(article['datetime'], '%Y-%m-%dT%H:%M%z')
+            article['mod_date'] = datetime.strftime(article['mod_date'], '%Y-%m-%dT%H:%M%z')
+            article['pub_date'] = datetime.strftime(article['pub_date'], '%Y-%m-%dT%H:%M%z')
     print('Writing to file...')
     with open(filename, 'w', encoding='utf-8') as f:
         json.dump(parsed_articles, f, ensure_ascii=False, indent=4)
@@ -123,11 +124,21 @@ def parse_article(soup, url):
         raise ValidationError(f'Failed to parse inLanguage attribute in schema: {url}')
     
 
-    #Date
+    #Date Modified
     try:
-        datetime_str = schema['dateModified']
-        datetime_str = datetime_str[:-3] + datetime_str[-2:]
-        article['datetime'] = datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S%z')
+        mod_date_str = schema['dateModified']
+        mod_date_str = mod_date_str[:-3] + mod_date_str[-2:]
+        article['mod_date'] = datetime.strptime(mod_date_str, '%Y-%m-%dT%H:%M:%S%z')
+    except Exception as e:
+        logging.exception(e)
+        raise ValidationError(f'Failed to parse dateModified attribute in schema: {url}')
+    
+
+    #Date Published
+    try:
+        pub_date_str = schema['datePublished']
+        pub_date_str = pub_date_str[:-3] + pub_date_str[-2:]
+        article['pub_date'] = datetime.strptime(pub_date_str, '%Y-%m-%dT%H:%M:%S%z')
     except Exception as e:
         logging.exception(e)
         raise ValidationError(f'Failed to parse dateModified attribute in schema: {url}')
