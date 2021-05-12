@@ -1,3 +1,12 @@
+'''
+MST961-EWS: Data Science Tools & Techniques
+Final Exercise
+Cory Campbell, Josh Swain
+10 May 2021
+
+lorient_scraper.py
+'''
+
 import concurrent.futures as cf
 import json
 import logging
